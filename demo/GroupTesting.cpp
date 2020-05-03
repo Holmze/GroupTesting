@@ -8,7 +8,7 @@
 using namespace std;
 
 #define START_FILE_NO 1
-#define END_FILE_NO 10
+#define END_FILE_NO 1
 
 
 struct FIVE_TUPLE{	char key[13];	};//ฮๅิชื้

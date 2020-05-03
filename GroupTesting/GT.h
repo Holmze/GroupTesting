@@ -103,34 +103,50 @@ public:
         int ret = 1 << 30;
         for (int i = 0; i < d; i++) {
         	int index = (hash[i]->run((const char *)key, key_len)) % w;
-            int tmp = counters[i][index]->node[0];
+            int tmp = counters[i][index].node[0];
             ret = min(ret, tmp);
         }
         return ret;
     }
 	
-	void get_heavy_hitters(uint32_t threshold, std::vector<pair<uint32_t, uint32_t> >& ret,int k=2){//find majority item
+	void get_heavy_hitters(uint32_t threshold, std::vector<pair<uint32_t, uint32_t> >& ret){//find majority item
 		ret.clear();
 		for(int i = 0;i<d;i++){
 			for(int j = 0;j<w;j++){
-				if(counters[i][j].node[0]>=threshold){//node[0]大于给定阈值时才get heavy hitter
+				if(counters[i][j].node[0]>threshold){//node[0]大于给定阈值时才get heavy hitter
 					long key_long = 0;
 					int t=1;
-					int cntk = counters[i][j].node[0]/k;
 					for(int k=0;k<32;k++){
-						if(counters[i][j].node[k+1]>=cntk){
+						if((counters[i][j].node[k+1]>threshold)&&(counters[i][j].node[0]-counters[i][j].node[k+1])<=threshold){
 							key_long += t;
+						}
+						else if((counters[i][j].node[k+1]<=threshold)&&(counters[i][j].node[0]-counters[i][j].node[k+1])<=threshold){
+							break;//reject:no hot item
+						}
+						else if((counters[i][j].node[k+1]>threshold)&&(counters[i][j].node[0]-counters[i][j].node[k+1])>threshold){
+							break;//reject:too much hot item
 						}
 						t=t*2;
 					}
 					if(key_long==0) break;
 					uint32_t key_32 = (uint32_t)key_long;
-					ret.emplace_back(make_pair(key_32,counters[i][j].node[0]));
+					uint8_t key_8[4];
+					int query_flag = 1; //标记查询是否正常
+					/*for (int k = 0; k < d; k++) {
+						int index = (hash[k]->run((const char *)key_8, key_len)) % w;
+						if(counters[k][index].node[0]<threshold){
+							cout << "error: "<< counters[k][index].node[0] << endl;
+							query_flag = 0;//出现其他行小于阈值，这个key为假阳性
+							break;
+						}
+					}*/
+					if(query_flag){
+						ret.emplace_back(make_pair(key_32,counters[i][j].node[0]));//查询无误
+					}
 				}
 			}
 		}
 	}
 };
-
 
 #endif
